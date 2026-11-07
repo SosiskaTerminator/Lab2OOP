@@ -2,9 +2,7 @@ import java.awt.*;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.io.UnsupportedEncodingException;
 import java.net.*;
-import java.nio.charset.StandardCharsets;
 import java.util.Scanner;
 
 import com.google.gson.JsonObject;
@@ -13,58 +11,53 @@ import com.google.gson.JsonParser;
 
 public class Main {
     public static void main(String[] args) throws IOException {
+        Requester req = new Requester();
         Scanner scan = new Scanner(System.in);
-        System.out.print("Введите запрос (например, ЛЭТИ): ");
-        String searchQuery = scan.nextLine();
 
-        String encodedQuery = URLEncoder.encode(searchQuery, StandardCharsets.UTF_8.toString());
+        while (true) {
+            System.out.print("Введите запрос : ");
+            String searchQuery = scan.nextLine();
 
-        String urlString = "https://ru.wikipedia.org/w/api.php?action=query&list=search&utf8=&format=json&srsearch=" + encodedQuery;
+            req.setRequest(searchQuery);
+            int response_code = req.makeConnection();
+            if (response_code == 200) {
+                try (BufferedReader in = new BufferedReader(
+                        new InputStreamReader(req.getConnectionResult(), "UTF-8"))) {
 
-        URL address = new URL(urlString);
-        HttpURLConnection connection = (HttpURLConnection) address.openConnection();
-        connection.setRequestMethod("GET");
+                    String inputLine;
+                    StringBuilder response = new StringBuilder();
 
-        connection.setRequestProperty("User-Agent", "WikiSearch/1.0");
+                    while ((inputLine = in.readLine()) != null) {
+                        response.append(inputLine);
+                    }
 
-        int responseCode = connection.getResponseCode();
-        if (responseCode == 200) {
-            try (BufferedReader in = new BufferedReader(
-                    new InputStreamReader(connection.getInputStream(), StandardCharsets.UTF_8))) {
+                    String jsonString = response.toString();
 
-                String inputLine;
-                StringBuilder response = new StringBuilder();
+                    System.out.println(jsonString);
 
-                while ((inputLine = in.readLine()) != null) {
-                    response.append(inputLine);
+                    JsonObject root = JsonParser.parseString(response.toString()).getAsJsonObject();
+
+                    JsonObject query = root.getAsJsonObject("query");
+                    JsonArray search = query.getAsJsonArray("search");
+                    JsonObject article = search.get(0).getAsJsonObject();
+                    int pageid = article.get("pageid").getAsInt();
+
+                    String url = "https://ru.wikipedia.org/w/index.php?curid=" + pageid;
+
+                    Desktop desktop = Desktop.getDesktop();
+                    URI uri = new URI(url);
+
+                    desktop.browse(uri);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                } catch (URISyntaxException e) {
+                    throw new RuntimeException(e);
                 }
-
-                String jsonString = response.toString();
-
-                System.out.println(jsonString);
-
-                JsonObject root = JsonParser.parseString(response.toString()).getAsJsonObject();
-
-                JsonObject query = root.getAsJsonObject("query");
-                JsonArray search = query.getAsJsonArray("search");
-                JsonObject article = search.get(0).getAsJsonObject();
-                int pageid = article.get("pageid").getAsInt();
-
-                String url = "https://ru.wikipedia.org/w/index.php?curid=" + pageid;
-
-                Desktop desktop = Desktop.getDesktop();
-                URI uri = new URI(url);
-
-                desktop.browse(uri);
-            } catch (IOException e) {
-                e.printStackTrace();
-            } catch (URISyntaxException e) {
-                throw new RuntimeException(e);
+            } else {
+                System.out.println("Cry baby. Код ответа сервера: " + response_code);
             }
-        } else {
-            System.out.println("Cry baby. Код ответа сервера: " + responseCode);
-        }
 
-        connection.disconnect();
+            req.disconnect();
+        }
     }
 }
