@@ -33,6 +33,7 @@ public class Main {
 
                     if (choose < 0 || choose > max(10, list.size())) {
                         System.out.println("Введеного вами числа нет в допустимом диапозоне[0, %d]".formatted(max(10, list.size())));
+                        continue;
                     }
 
                     openPage(parser.getPageId(choose));
