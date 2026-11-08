@@ -1,4 +1,5 @@
 import java.awt.*;
+import java.io.IOException;
 import java.net.*;
 import java.util.Scanner;
 
@@ -34,12 +35,7 @@ public class Main {
                         System.out.println("Введеного вами числа нет в допустимом диапозоне[0, %d]".formatted(max(10, list.size())));
                     }
 
-                    String url = "https://ru.wikipedia.org/w/index.php?curid=" + parser.getPageId(choose);
-
-                    Desktop desktop = Desktop.getDesktop();
-                    URI uri = new URI(url);
-
-                    desktop.browse(uri);
+                    openPage(parser.getPageId(choose));
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
@@ -48,5 +44,14 @@ public class Main {
             }
         }
         req.disconnect();
+    }
+
+    public static void openPage(String pageid) throws URISyntaxException, IOException {
+        String url = "https://ru.wikipedia.org/w/index.php?curid=" + pageid;
+
+        Desktop desktop = Desktop.getDesktop();
+        URI uri = new URI(url);
+
+        desktop.browse(uri);
     }
 }
