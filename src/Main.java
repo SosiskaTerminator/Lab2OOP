@@ -1,63 +1,52 @@
 import java.awt.*;
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
 import java.net.*;
 import java.util.Scanner;
 
-import com.google.gson.JsonObject;
-import com.google.gson.JsonArray;
-import com.google.gson.JsonParser;
+import static java.lang.Math.max;
 
 public class Main {
-    public static void main(String[] args) throws IOException {
+    public static void main(String[] args) {
         Requester req = new Requester();
         Scanner scan = new Scanner(System.in);
 
         while (true) {
-            System.out.print("Введите запрос : ");
-            String searchQuery = scan.nextLine();
+            System.out.print("Введите запрос: ");
+            String search = scan.nextLine();
+            if (search.equals("exit")) break;
 
-            req.setRequest(searchQuery);
+            req.setRequest(search);
             int response_code = req.makeConnection();
             if (response_code == 200) {
-                try (BufferedReader in = new BufferedReader(
-                        new InputStreamReader(req.getConnectionResult(), "UTF-8"))) {
+                try {
+                    Parser parser = new Parser(req.getConnectionResult());
 
-                    String inputLine;
-                    StringBuilder response = new StringBuilder();
+                    var list = parser.getResults();
 
-                    while ((inputLine = in.readLine()) != null) {
-                        response.append(inputLine);
+                    System.out.println("Было найдено %d совпадений.".formatted(list.size()));
+                    if (list.isEmpty()) continue;
+                    for (int i = 0; i < max(10, list.size()); i++) {
+                        System.out.println("%d) %s".formatted(i + 1, list.get(i)));
+                    }
+                    System.out.print("Выберите нужный вам вариант: ");
+                    int choose = Integer.parseInt(scan.nextLine());
+
+                    if (choose < 0 || choose > max(10, list.size())) {
+                        System.out.println("Введеного вами числа нет в допустимом диапозоне[0, %d]".formatted(max(10, list.size())));
                     }
 
-                    String jsonString = response.toString();
-
-                    System.out.println(jsonString);
-
-                    JsonObject root = JsonParser.parseString(response.toString()).getAsJsonObject();
-
-                    JsonObject query = root.getAsJsonObject("query");
-                    JsonArray search = query.getAsJsonArray("search");
-                    JsonObject article = search.get(0).getAsJsonObject();
-                    int pageid = article.get("pageid").getAsInt();
-
-                    String url = "https://ru.wikipedia.org/w/index.php?curid=" + pageid;
+                    String url = "https://ru.wikipedia.org/w/index.php?curid=" + parser.getPageId(choose);
 
                     Desktop desktop = Desktop.getDesktop();
                     URI uri = new URI(url);
 
                     desktop.browse(uri);
-                } catch (IOException e) {
+                } catch (Exception e) {
                     e.printStackTrace();
-                } catch (URISyntaxException e) {
-                    throw new RuntimeException(e);
                 }
             } else {
                 System.out.println("Cry baby. Код ответа сервера: " + response_code);
             }
-
-            req.disconnect();
         }
+        req.disconnect();
     }
 }

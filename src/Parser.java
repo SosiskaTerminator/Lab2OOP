@@ -11,9 +11,11 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 
+import static java.lang.Math.max;
+
 public class Parser {
     private String json;
-    private List<JsonElement> elements;
+    private JsonArray elements = new JsonArray();
 
     public Parser(InputStream stream) throws IOException {
         BufferedReader buffer = new BufferedReader(new InputStreamReader(stream, StandardCharsets.UTF_8));
@@ -34,7 +36,21 @@ public class Parser {
         JsonObject root = JsonParser.parseString(json).getAsJsonObject();
 
         JsonObject query = root.getAsJsonObject("query");
-        JsonArray search = query.getAsJsonArray("search");
-        elements = search.asList();
+        elements = query.getAsJsonArray("search");
+    }
+
+    public List<String> getResults() {
+        List<String> temp = new ArrayList<>();
+
+        for (int i = 0; i < elements.size(); i++) {
+            JsonObject el = elements.get(i).getAsJsonObject();
+            temp.add(el.get("title").toString());
+        }
+
+        return temp;
+    }
+
+    public String getPageId(int pos) {
+        return elements.get(pos - 1).getAsJsonObject().get("pageid").toString();
     }
 }
