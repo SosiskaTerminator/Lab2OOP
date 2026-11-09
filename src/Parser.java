@@ -1,4 +1,5 @@
 import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 
@@ -29,11 +30,24 @@ public class Parser {
         getAllElements();
     }
 
-    private void getAllElements() {
+    private void getAllElements() throws IOException {
         JsonObject root = JsonParser.parseString(json).getAsJsonObject();
 
+        if (root.has("error")) {
+            JsonElement error = root.get("error");
+            String info = error.isJsonObject() && error.getAsJsonObject().has("info")
+                    ? error.getAsJsonObject().get("info").getAsString()
+                    : error.toString();
+            throw new IOException("Ошибка API: " + info);
+        }
+
         JsonObject query = root.getAsJsonObject("query");
-        elements = query.getAsJsonArray("search");
+        if (query == null) {
+            throw new IOException("В ответе сервера нет результатов поиска.");
+        }
+
+        JsonObject search = root.getAsJsonObject("search");
+        if (search != null) elements = search.getAsJsonArray();
     }
 
     public List<String> getResults() {
