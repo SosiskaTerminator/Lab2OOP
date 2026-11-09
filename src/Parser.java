@@ -46,8 +46,8 @@ public class Parser {
             throw new IOException("В ответе сервера нет результатов поиска.");
         }
 
-        JsonObject search = root.getAsJsonObject("search");
-        if (search != null) elements = search.getAsJsonArray();
+        JsonArray search = query.getAsJsonArray("search");
+        if (search != null) elements = search;
     }
 
     public List<String> getResults() {
