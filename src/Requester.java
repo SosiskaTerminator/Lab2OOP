@@ -4,6 +4,7 @@ import java.net.*;
 import java.nio.charset.StandardCharsets;
 
 public class Requester {
+    private static final int TIMEOUT_MS = 10_000;
     private String request_encoded;
     private HttpURLConnection connection;
 
@@ -12,11 +13,16 @@ public class Requester {
     }
 
     public int makeConnection() {
+        disconnect();
+
         try {
             String url = "https://ru.wikipedia.org/w/api.php?action=query&list=search&utf8=&format=json&srsearch=";
             URL address = new URL(url + request_encoded);
             connection = (HttpURLConnection) address.openConnection();
             connection.setRequestProperty("User-Agent", "WikiSearch/1.0");
+
+            connection.setConnectTimeout(TIMEOUT_MS);
+            connection.setReadTimeout(TIMEOUT_MS);
 
             return connection.getResponseCode();
         } catch (MalformedURLException e) {
@@ -29,5 +35,10 @@ public class Requester {
 
     public InputStream getConnectionResult() throws IOException { return connection.getInputStream(); }
 
-    public void disconnect() { connection.disconnect(); }
+    public void disconnect() {
+        if (connection != null) {
+            connection.disconnect();
+            connection = null;
+        }
+    }
 }
