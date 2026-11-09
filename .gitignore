@@ -1,0 +1,8 @@
+target/
+out/
+build.sh
+mvnw
+mvnw.cmd
+pom.xml
+.mvn/wrapper/maven-wrapper.properties
+pom.xml
