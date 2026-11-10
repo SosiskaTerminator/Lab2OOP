@@ -91,8 +91,8 @@ public class Main {
                 }
             }
 
-            if (choice < 0 || choice > max) {
-                System.out.println("Введеного вами числа нет в допустимом диапозоне[0, %d]".formatted(max));
+            if (choice < 1 || choice > max) {
+                System.out.println("Введеного вами числа нет в допустимом диапозоне[1, %d]".formatted(max));
                 continue;
             }
 
